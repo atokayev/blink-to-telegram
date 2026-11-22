@@ -41,6 +41,9 @@ class FakeSource:
     def sync_modules(self):
         return iter([("Home", object())])
 
+    def sync_count(self) -> int:
+        return 1
+
     async def refresh_manifest(self, sync) -> list[object]:
         return [object()]
 
