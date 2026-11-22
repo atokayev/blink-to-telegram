@@ -40,7 +40,10 @@ async def check(settings: Settings) -> int:
         if settings.blink_login_file.stat().st_mode & 0o077:
             print("Blink login:    WARNING - should be mode 600 (chmod 600)")
     else:
-        print("Blink login:    MISSING - run `sudo -u blink blink-login`")
+        print(
+            "Blink login:    MISSING - run `blink-login` "
+            "(local: `.venv/bin/python scripts/blink_login.py`)"
+        )
         problems += 1
 
     session = aiohttp.ClientSession()

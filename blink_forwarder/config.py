@@ -75,6 +75,18 @@ class Settings:
             path.mkdir(parents=True, exist_ok=True)
 
 
+def load_env_file() -> None:
+    """Load ``BLINK_ENV_FILE`` or the nearest ``.env`` into the environment.
+
+    Existing environment variables always win over the file.
+    """
+    env_file = os.environ.get("BLINK_ENV_FILE")
+    if env_file:
+        load_dotenv(env_file, override=False)
+    else:
+        load_dotenv(override=False)
+
+
 def load_settings(
     *,
     dry_run: bool | None = None,
@@ -86,11 +98,7 @@ def load_settings(
     file in the current directory (or a parent) is loaded when present.
     Existing environment variables always win over the file.
     """
-    env_file = os.environ.get("BLINK_ENV_FILE")
-    if env_file:
-        load_dotenv(env_file, override=False)
-    else:
-        load_dotenv(override=False)
+    load_env_file()
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()

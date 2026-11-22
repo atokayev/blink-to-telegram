@@ -168,6 +168,43 @@ class ConfigTests(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 load_settings()
 
+    def test_blink_env_file_is_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "custom.env"
+            env_file.write_text(
+                "TELEGRAM_BOT_TOKEN=999:XYZ\n"
+                "TELEGRAM_CHAT_ID=-100999\n"
+                f"BLINK_DATA_DIR={tmp}\n",
+                encoding="utf-8",
+            )
+            with patch.dict(
+                os.environ, {"BLINK_ENV_FILE": str(env_file)}, clear=True
+            ):
+                settings = load_settings()
+        self.assertEqual(settings.telegram_bot_token, "999:XYZ")
+        self.assertEqual(settings.telegram_chat_id, "-100999")
+        self.assertEqual(settings.db_path, Path(tmp) / "state.db")
+
+    def test_environment_overrides_env_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "custom.env"
+            env_file.write_text(
+                "TELEGRAM_BOT_TOKEN=999:FROMFILE\n"
+                "TELEGRAM_CHAT_ID=-100999\n"
+                f"BLINK_DATA_DIR={tmp}\n",
+                encoding="utf-8",
+            )
+            with patch.dict(
+                os.environ,
+                {
+                    "BLINK_ENV_FILE": str(env_file),
+                    "TELEGRAM_BOT_TOKEN": "111:FROMENV",
+                },
+                clear=True,
+            ):
+                settings = load_settings()
+        self.assertEqual(settings.telegram_bot_token, "111:FROMENV")
+
 
 if __name__ == "__main__":
     unittest.main()

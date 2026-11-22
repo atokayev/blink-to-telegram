@@ -103,7 +103,8 @@ class BlinkSource:
         if not self.login_file.is_file():
             raise BlinkAuthError(
                 f"Blink login file not found: {self.login_file}. "
-                "Run `blink-login` on the VM to authenticate."
+                "Run `blink-login` (or `python scripts/blink_login.py`) to "
+                "authenticate."
             )
 
         try:
@@ -126,8 +127,8 @@ class BlinkSource:
                 ok = await blink.start()
             except BlinkTwoFARequiredError as exc:
                 raise BlinkAuthError(
-                    "Blink is asking for a 2FA code. Run `blink-login` on the VM "
-                    "to refresh the saved session."
+                    "Blink is asking for a 2FA code. Run `blink-login` to "
+                    "refresh the saved session."
                 ) from exc
             except Exception as exc:
                 raise BlinkAuthError(f"Blink login failed: {exc}") from exc
@@ -135,7 +136,7 @@ class BlinkSource:
             if not ok or not blink.available:
                 raise BlinkAuthError(
                     "Blink login failed. The saved session may have expired; "
-                    "run `blink-login` on the VM."
+                    "run `blink-login` to refresh it."
                 )
         except BaseException:
             await self._session.close()

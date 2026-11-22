@@ -158,6 +158,60 @@ The first run may have a large backlog. The per-run cap drains it 50 clips at a
 time; later cron runs continue automatically. At ~4 seconds per upload, 50
 clips takes about 3–4 minutes.
 
+## Local test before deploying to OCI
+
+You can run the full pipeline on your laptop first. Everything local lives in
+`data/`, which is gitignored.
+
+```bash
+cd blink-to-telegram
+python3 -m venv .venv
+.venv/bin/pip install -e .
+cp .env.example .env
+# edit .env: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TZ
+```
+
+Run the unit tests (no credentials needed):
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+# or, for compile + tests + CLI check in one step:
+scripts/local_test.sh
+```
+
+Validate Telegram first. The Blink login file will still be reported missing,
+which is expected at this point:
+
+```bash
+.venv/bin/python -m blink_forwarder --check
+```
+
+Log in interactively. This writes `data/blink_login.json` (mode 600) and prints
+each Sync Module's local-storage status:
+
+```bash
+.venv/bin/python scripts/blink_login.py
+```
+
+Then check again, preview, and send exactly one clip:
+
+```bash
+.venv/bin/python -m blink_forwarder --check
+.venv/bin/python -m blink_forwarder --dry-run
+.venv/bin/python -m blink_forwarder --max-clips 1
+```
+
+Confirm the video appears in the channel, then run without the cap:
+
+```bash
+.venv/bin/python -m blink_forwarder
+```
+
+To repeat the test, stop the job and delete `data/state.db` so the same clips
+are eligible again. Delete `data/archive/` too if you do not want the local
+copies. For production, run `blink-login` on the VM rather than copying the
+token file, because Blink ties the session to a generated hardware id.
+
 ## 7. Schedule
 
 The default cron entry is `/etc/cron.d/blink-forwarder`:
@@ -354,4 +408,5 @@ The code is split into:
 - `blink_forwarder/db.py` — SQLite dedup and alert throttling.
 - `blink_forwarder/forwarder.py` — the run loop.
 - `scripts/blink_login.py` — interactive one-time login.
+- `scripts/local_test.sh` — credential-free local smoke test.
 - `scripts/install.sh` — Oracle/Ubuntu installer.

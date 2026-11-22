@@ -21,6 +21,7 @@ from blinkpy.auth import Auth, BlinkTwoFARequiredError
 from blinkpy.blinkpy import Blink
 
 from blink_forwarder.blink_source import save_login_data
+from blink_forwarder.config import load_env_file
 
 
 def default_login_file() -> Path:
@@ -89,6 +90,7 @@ async def login(login_file: Path, username: str | None) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_env_file()
     parser = argparse.ArgumentParser(description="One-time Blink login")
     parser.add_argument("--login-file", type=Path, default=None)
     parser.add_argument("--username", default=os.environ.get("BLINK_USERNAME"))
