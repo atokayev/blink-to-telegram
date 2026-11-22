@@ -410,6 +410,37 @@ sudo rm /etc/cron.d/blink-forwarder
 sudo systemctl disable --now blink-forwarder.timer
 ```
 
+## Disaster recovery
+
+Every day at 09:17 UTC the VM uploads its `state.db`, Blink login file, and
+configuration to the private Object Storage bucket `blink-forwarder-state`
+(inside the free 20 GB allotment). The upload uses *instance principals* —
+the `blink-backup-dg` dynamic group plus the `blink-backup-policy` policy —
+so no API keys are stored on the VM, and the rule matches any instance in the
+tenancy, so a **recreated** instance keeps access.
+
+If the VM is ever recreated, bootstrap it in three steps:
+
+```bash
+# 1. install the app (as before)
+sudo ~/blink-to-telegram/scripts/install.sh
+
+# 2. install the OCI CLI and restore state, login, and config
+sudo python3 -m venv /opt/oci-cli-venv
+sudo /opt/oci-cli-venv/bin/pip install oci-cli
+sudo ln -sf /opt/oci-cli-venv/bin/oci /usr/local/bin/oci
+sudo ~/blink-to-telegram/scripts/restore_from_oci.sh
+
+# 3. that's it — the restored state.db means already-sent clips are not
+#    re-posted, and the restored login file means no 2FA re-login.
+```
+
+You can verify the backup contents any time:
+
+```bash
+oci os object list --bucket-name blink-forwarder-state --auth instance_principal
+```
+
 ## Development
 
 ```bash
