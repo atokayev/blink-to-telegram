@@ -71,16 +71,14 @@ class HelperTests(unittest.TestCase):
             reported_size=123,
         )
         caption = build_caption(info, ZoneInfo("America/New_York"))
-        self.assertIn("Front &lt;Door&gt;", caption)
-        self.assertIn("Home &amp; Garage", caption)
-        self.assertIn("2026-01-01 22:04:05", caption)
+        self.assertEqual(
+            caption,
+            "Front &lt;Door&gt; — 2026-01-01 22:04:05 (Home &amp; Garage)",
+        )
 
-        # With a single Sync Module the name is redundant.
+        # With a single Sync Module the name is omitted entirely.
         short = build_caption(info, ZoneInfo("America/New_York"), include_sync=False)
-        self.assertNotIn("Home &amp; Garage", short)
-        self.assertNotIn("📡", short)
-        self.assertIn("Front &lt;Door&gt;", short)
-        self.assertEqual(short.count("\n"), 1)
+        self.assertEqual(short, "Front &lt;Door&gt; — 2026-01-01 22:04:05")
 
     def test_archive_path_collision(self) -> None:
         info = ClipInfo(

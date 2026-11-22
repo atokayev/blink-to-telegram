@@ -52,17 +52,17 @@ def sha256_file(path: Path) -> str:
 
 
 def build_caption(info: ClipInfo, tz, include_sync: bool = True) -> str:
+    """Single-line caption, e.g. ``Front Door — 2026-11-21 20:27:36``.
+
+    Local time in ``tz``. When several Sync Modules feed the same channel,
+    the module name is appended in parentheses.
+    """
     local = info.recorded_at.astimezone(tz)
-    zone = local.tzname() or ""
     camera = html.escape(info.camera[:80], quote=False)
-    lines = [
-        f"🎥 <b>{camera}</b>",
-        f"🕒 {local:%Y-%m-%d %H:%M:%S} {zone}",
-    ]
+    line = f"{camera} — {local:%Y-%m-%d %H:%M:%S}"
     if include_sync:
-        # Only worth a line when the account has more than one Sync Module.
-        lines.append(f"📡 {html.escape(info.sync_name[:80], quote=False)}")
-    return "\n".join(lines)
+        line += f" ({html.escape(info.sync_name[:80], quote=False)})"
+    return line
 
 
 def archive_path(root: Path, info: ClipInfo) -> Path:
