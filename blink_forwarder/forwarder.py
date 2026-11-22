@@ -51,15 +51,28 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_caption(info: ClipInfo, tz, include_sync: bool = True) -> str:
-    """Single-line caption, e.g. ``Front Door — 2026-11-21 20:27:36``.
+_WEEKDAY_NAMES = (
+    "Monday", "Tuesday", "Wednesday", "Thursday",
+    "Friday", "Saturday", "Sunday",
+)
+_MONTH_ABBRS = (
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
 
-    Local time in ``tz``. When several Sync Modules feed the same channel,
-    the module name is appended in parentheses.
+
+def build_caption(info: ClipInfo, tz, include_sync: bool = True) -> str:
+    """Single-line caption, e.g. ``[Garage] Friday, Nov 21 @ 20:27:36``.
+
+    Local time in ``tz``. Weekday and month names are hardcoded in English so
+    the output never depends on the system locale. When several Sync Modules
+    feed the same channel, the module name is appended in parentheses.
     """
     local = info.recorded_at.astimezone(tz)
     camera = html.escape(info.camera[:80], quote=False)
-    line = f"{camera} — {local:%Y-%m-%d %H:%M:%S}"
+    weekday = _WEEKDAY_NAMES[local.weekday()]
+    month = _MONTH_ABBRS[local.month - 1]
+    line = f"[{camera}] {weekday}, {month} {local.day} @ {local:%H:%M:%S}"
     if include_sync:
         line += f" ({html.escape(info.sync_name[:80], quote=False)})"
     return line

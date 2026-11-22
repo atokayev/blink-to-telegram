@@ -73,12 +73,12 @@ class HelperTests(unittest.TestCase):
         caption = build_caption(info, ZoneInfo("America/New_York"))
         self.assertEqual(
             caption,
-            "Front &lt;Door&gt; — 2026-01-01 22:04:05 (Home &amp; Garage)",
+            "[Front &lt;Door&gt;] Thursday, Jan 1 @ 22:04:05 (Home &amp; Garage)",
         )
 
         # With a single Sync Module the name is omitted entirely.
         short = build_caption(info, ZoneInfo("America/New_York"), include_sync=False)
-        self.assertEqual(short, "Front &lt;Door&gt; — 2026-01-01 22:04:05")
+        self.assertEqual(short, "[Front &lt;Door&gt;] Thursday, Jan 1 @ 22:04:05")
 
     def test_archive_path_collision(self) -> None:
         info = ClipInfo(
