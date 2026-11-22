@@ -1,5 +1,10 @@
 # Blink → Telegram Forwarder
 
+[![Secrets scan](https://github.com/atokayev/blink-to-telegram/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/atokayev/blink-to-telegram/actions/workflows/gitleaks.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Tested on OCI Always Free](https://img.shields.io/badge/Oracle_Cloud-Always_Free-F80000.svg)](deploy/oci/README.md)
+
 Forward every motion clip from a Blink Sync Module's USB drive to a Telegram
 channel, running unattended on an Oracle Cloud Always Free VM.
 
@@ -8,6 +13,26 @@ on the Sync Module, downloads any it has not seen before, posts them with
 Telegram's `sendVideo`, and records each clip in SQLite so it is never posted
 twice. Originals are kept in a local archive that is pruned after 90 days by
 default.
+
+## Features
+
+- **No Blink subscription required** — built around the Sync Module's USB
+  local-storage manifest, so it works on free accounts.
+- **Exactly-once delivery** — stable source keys plus content hashing in
+  SQLite; a recreated VM, replayed cron run, or duplicate clip cannot cause
+  re-posts.
+- **Chronological backlog** — clips are always sent oldest-first, even after
+  weeks offline.
+- **Polite to Telegram** — honours `retry_after` on 429s, spaces uploads to
+  stay under the ~20 messages/minute channel limit, and caps each run.
+- **Self-healing** — expired Blink logins, oversize clips (>50 MB Bot API
+  limit), and failed downloads trigger throttled alerts and retry cleanly on
+  the next run.
+- **Free-tier friendly** — provisions itself on Oracle Cloud Always Free in
+  one command (`scripts/oci_provision.sh`), backs its state to Object Storage
+  daily, and restores with one script after any disaster.
+- **Agent-ready** — ships an agent skill (`.opencode/skills/deploy-to-oci/`)
+  so AI coding assistants can perform the whole deployment.
 
 ```
 Blink cameras ──> Sync Module 2 ──> USB drive
@@ -456,6 +481,37 @@ You can verify the backup contents any time:
 ```bash
 oci os object list --bucket-name blink-forwarder-state --auth instance_principal
 ```
+
+## Frequently asked questions
+
+**Do I need a Blink subscription?**
+No. The project is designed around the Sync Module's USB local storage, which
+works on subscription-free accounts. With a subscription, Blink may batch
+clips to USB daily — the forwarder still picks them up.
+
+**Do the videos leave my network?**
+Yes — clips travel through Blink's cloud (exactly like the official app:
+the VM asks Blink to upload a clip from the Sync Module, then downloads it).
+Nothing is stored in the cloud beyond Blink's own temporary upload.
+
+**Can it run somewhere other than Oracle Cloud?**
+Yes. Any always-on Linux box with outbound HTTPS works — Raspberry Pi,
+Synology, a VPS, your home server. Use the systemd timer instead of cron for
+small devices (see `scripts/install.sh --systemd`).
+
+**Can it delete clips from the USB drive after sending?**
+Not currently — the forwarder never touches the drive. A Sync Module 2 holds
+up to 256 GB, so most users prune from the Blink app occasionally. Contributions
+welcome (`LocalStorageMediaItem.delete_video` in blinkpy already supports it).
+
+**Is this affiliated with Blink or Telegram?**
+No. It uses the unofficial `blinkpy` client (pinned version) and the official
+Telegram Bot API.
+
+**What does the state database contain?**
+Only what's needed to avoid duplicates: sync serial, camera name, clip
+timestamp, size, SHA-256, and the Telegram message id. No credentials and no
+video content.
 
 ## Development
 
