@@ -51,16 +51,18 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_caption(info: ClipInfo, tz) -> str:
+def build_caption(info: ClipInfo, tz, include_sync: bool = True) -> str:
     local = info.recorded_at.astimezone(tz)
     zone = local.tzname() or ""
     camera = html.escape(info.camera[:80], quote=False)
-    sync_name = html.escape(info.sync_name[:80], quote=False)
-    return (
-        f"🎥 <b>{camera}</b>\n"
-        f"🕒 {local:%Y-%m-%d %H:%M:%S} {zone}\n"
-        f"📡 {sync_name}"
-    )
+    lines = [
+        f"🎥 <b>{camera}</b>",
+        f"🕒 {local:%Y-%m-%d %H:%M:%S} {zone}",
+    ]
+    if include_sync:
+        # Only worth a line when the account has more than one Sync Module.
+        lines.append(f"📡 {html.escape(info.sync_name[:80], quote=False)}")
+    return "\n".join(lines)
 
 
 def archive_path(root: Path, info: ClipInfo) -> Path:
@@ -152,6 +154,7 @@ async def run(settings: Settings) -> int:
     try:
         try:
             async with BlinkSource(settings.blink_login_file) as source:
+                include_sync = source.sync_count() > 1
                 limit_reached = False
                 for sync_name, sync in source.sync_modules():
                     if limit_reached:
@@ -294,7 +297,7 @@ async def run(settings: Settings) -> int:
                                 )
                                 continue
 
-                            caption = build_caption(info, settings.tz)
+                            caption = build_caption(info, settings.tz, include_sync)
                             message_id = await telegram.send_video(tmp_path, caption)
 
                             destination = archive_path(settings.archive_dir, info)

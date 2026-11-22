@@ -173,6 +173,11 @@ class BlinkSource:
         assert self.blink is not None
         return iter(self.blink.sync.items())
 
+    def sync_count(self) -> int:
+        """How many Sync Modules the account has."""
+        assert self.blink is not None
+        return len(self.blink.sync)
+
     async def refresh_manifest(self, sync: Any) -> list[Any]:
         """Fetch the current local-storage manifest for one Sync Module.
 
