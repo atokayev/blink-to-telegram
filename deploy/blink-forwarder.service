@@ -1,0 +1,27 @@
+[Unit]
+Description=Forward Blink local-storage clips to Telegram
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=blink
+Group=blink
+WorkingDirectory=/opt/blink-to-telegram
+EnvironmentFile=/etc/blink-to-telegram/env
+ExecStart=/opt/blink-to-telegram/.venv/bin/python -m blink_forwarder
+TimeoutStartSec=30min
+Nice=10
+UMask=0027
+
+# Hardening: the app only needs to write its own state directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/blink-to-telegram
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blink-to-telegram"
+version = "1.0.0"
+description = "Forward Blink Sync Module local-storage clips to a Telegram channel"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    # Pinned because this project uses blinkpy's local-storage manifest API.
+    "blinkpy==0.25.9",
+    "aiohttp>=3.14.1",
+    "python-dotenv>=1.0",
+    "tzdata>=2024.1",
+]
+
+[project.scripts]
+blink-forwarder = "blink_forwarder.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["blink_forwarder*"]

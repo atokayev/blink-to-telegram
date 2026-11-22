@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the Blink -> Telegram forwarder every 5 minutes
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+RandomizedDelaySec=20
+AccuracySec=30s
+Unit=blink-forwarder.service
+
+[Install]
+WantedBy=timers.target
