@@ -55,21 +55,56 @@ async def check(settings: Settings) -> int:
     )
     try:
         me = await telegram.get_me()
-        print(f"Telegram bot:   @{me.get('username', '?')} (id {me.get('id', '?')})")
+        bot_id = int(me["id"])
+        print(f"Telegram bot:   @{me.get('username', '?')} (id {bot_id})")
         chat = await telegram.get_chat()
         title = chat.get("title") or chat.get("username") or chat.get("id")
-        print(f"Telegram chat:  {title} ({chat.get('type', '?')})")
+        chat_type = str(chat.get("type", "?"))
+        print(f"Telegram chat:  {title} ({chat_type}, id {chat.get('id')})")
 
-        member = await telegram.get_chat_member(int(me["id"]))
-        status = member.get("status", "?")
+        member = await telegram.get_chat_member(bot_id)
+        status = str(member.get("status", "?"))
         can_post = bool(member.get("can_post_messages", False))
-        print(f"Bot status:     {status} (can_post_messages={can_post})")
-        if status not in {"administrator", "creator"} or not can_post:
+        can_send = bool(member.get("can_send_messages", False))
+        rights = {
+            key: value
+            for key, value in member.items()
+            if key.startswith("can_") or key in {"status", "is_anonymous"}
+        }
+        print(f"Bot status:     {status}")
+        print(f"Bot rights:     {rights}")
+
+        if chat_type == "channel":
+            if status in {"administrator", "creator"} and can_post:
+                print("Bot access:     OK - the bot can post videos here")
+            elif status in {"administrator", "creator"}:
+                print(
+                    "Bot access:     WARNING - the bot is an admin, but the "
+                    "'Post Messages' permission is off.\n"
+                    "                Open the channel -> Administrators -> "
+                    "select the bot -> enable 'Post Messages' -> Save."
+                )
+                problems += 1
+            else:
+                print(
+                    f"Bot access:     WARNING - the bot is '{status}', not an "
+                    "administrator of this channel.\n"
+                    "                Add it as an administrator with "
+                    "'Post Messages' enabled."
+                )
+                problems += 1
+        else:
             print(
-                "Bot status:     WARNING - add the bot to the channel as an "
-                "administrator with Post Messages"
+                f"Bot access:     NOTE - this chat is a {chat_type}, not a "
+                "channel.\n"
+                "                can_post_messages only exists for channels; "
+                "for a group the bot posts as an administrator, so this is "
+                "expected.\n"
+                "                If you intended to post to a channel, use the "
+                "channel's -100... id."
             )
-            problems += 1
+            if status in {"left", "kicked"}:
+                problems += 1
     except Exception as exc:
         print(f"Telegram:       FAILED - {exc}")
         print(
@@ -94,6 +129,10 @@ async def check(settings: Settings) -> int:
 
     if problems:
         print(f"\n{problems} problem(s) found.")
+        print(
+            "For raw Telegram chat/member details, run:\n"
+            "  python scripts/telegram_diag.py"
+        )
         return 2
     print("\nConfiguration looks good.")
     return 0

@@ -198,6 +198,33 @@ class TelegramClient:
             params={"chat_id": self._chat_id, "user_id": user_id},
         )
 
+    async def get_chat_administrators(self) -> list[dict]:
+        """Return the chat's administrator list (requires access to the chat)."""
+        try:
+            async with self._session.get(
+                self._url("getChatAdministrators"),
+                params={"chat_id": self._chat_id},
+                timeout=CALL_TIMEOUT,
+            ) as response:
+                data = await self._json(response)
+                status = response.status
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            raise TelegramError(
+                f"getChatAdministrators request failed: {exc}"
+            ) from exc
+        if not data.get("ok"):
+            code = data.get("error_code", status)
+            description = data.get("description", "unknown error")
+            raise _error_class(int(code), str(description))(
+                f"{code}: {description}"
+            )
+        result = data.get("result")
+        if not isinstance(result, list):
+            raise TelegramError(
+                f"Unexpected getChatAdministrators result: {result!r}"
+            )
+        return result
+
     async def _get(self, method: str, params: dict | None = None) -> dict:
         try:
             async with self._session.get(

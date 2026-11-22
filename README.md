@@ -346,6 +346,23 @@ sudo -u blink sqlite3 /var/lib/blink-to-telegram/state.db \
   "DELETE FROM clips WHERE status='skipped' AND reason LIKE 'too_large%';"
 ```
 
+**`can_post_messages=False` even though the bot is an administrator**
+
+`can_post_messages` is a **channels-only** field. If `--check` reports the chat
+as `supergroup` (a group), that field does not exist for it, so `False` is
+expected and not an error. Groups and channels both work as targets; what
+matters is that the bot is an administrator:
+
+- Group (`supergroup`): the bot posts as an administrator. Prove it end to end
+  with `python scripts/telegram_diag.py --send-test`.
+- Channel (`channel`): the bot must have the **Post Messages** admin permission
+  (Channel → Administrators → bot → enable Post Messages).
+
+If you meant to use a channel but `--check` shows `supergroup`, you added the
+bot to a group (or a channel's linked discussion group). Create the channel via
+Telegram → New Channel → Private, add the bot as an administrator with Post
+Messages, then update `TELEGRAM_CHAT_ID`.
+
 **`--check` says the data directory is not writable**
 
 Run the command as the `blink` user (`sudo -u blink ...`) and confirm
