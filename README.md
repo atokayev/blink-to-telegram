@@ -277,6 +277,8 @@ a message id.
 
 - **Polling, not real time.** Clips arrive within one cron interval (5 minutes)
   after Blink finishes writing them to the USB drive.
+- **Backlog order.** Clips are always sent oldest-first, so a large backlog
+  drains chronologically instead of in whatever order Blink returns them.
 - **Blink cloud dependency.** The download flow asks the Sync Module to upload a
   clip to Blink's cloud and then downloads it, so clips transit Blink's servers
   even though they were recorded locally. The Sync Module must be online.

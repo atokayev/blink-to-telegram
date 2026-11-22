@@ -67,6 +67,20 @@ def _as_int(value: Any) -> int | None:
         return None
 
 
+def _clip_sort_key(item: Any) -> tuple[dt.datetime, int]:
+    """Order clips oldest-first, with the clip id as a deterministic tiebreak."""
+    created = getattr(item, "created_at", None)
+    if isinstance(created, dt.datetime):
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=dt.timezone.utc)
+        else:
+            created = created.astimezone(dt.timezone.utc)
+    else:
+        created = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+    clip_id = _as_int(getattr(item, "id", None))
+    return (created, clip_id or 0)
+
+
 def _is_mp4(path: Path) -> bool:
     """Cheap sanity check so an HTML error page is never posted as a video."""
     try:
@@ -166,7 +180,8 @@ class BlinkSource:
         ``update_local_storage_manifest``: that method stores items in a
         ``SortedSet`` whose equality is based only on the clip timestamp, so two
         clips recorded in the same second (different cameras) can collapse into
-        one.  A plain list preserves every clip.
+        one.  A plain list preserves every clip.  Items are returned
+        oldest-first so a backlog drains chronologically.
         """
         if not sync.local_storage:
             _LOGGER.warning(
@@ -229,6 +244,10 @@ class BlinkSource:
             raise BlinkSourceError(
                 f"{sync.name}: malformed clip in local-storage manifest: {exc}"
             ) from exc
+
+        # Blink does not guarantee manifest order; send the backlog in
+        # chronological order so clips arrive oldest-first.
+        items.sort(key=_clip_sort_key)
 
         _LOGGER.info("%s: %d clip(s) in local storage", sync.name, len(items))
         return items
