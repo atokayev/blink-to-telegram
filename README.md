@@ -70,7 +70,23 @@ curl -s "https://api.telegram.org/bot<TOKEN>/getChat?chat_id=<CHAT_ID>"
 
 ## 2. Create the Oracle Cloud instance
 
-In the Oracle Cloud console:
+**Automated (recommended).** If the OCI CLI is installed and configured
+(`oci setup config`), one command provisions and bootstraps everything —
+network, SSH-only firewall, free VM with capacity retries, backup bucket with
+instance-principal IAM, app install, and a deliberately disabled cron job:
+
+```bash
+scripts/oci_provision.sh --bootstrap
+```
+
+Finish with the short checklist it prints (Blink login, history migration,
+verification, then re-enabling the schedule). Full details, the manual path,
+and disaster recovery live in
+[`deploy/oci/README.md`](deploy/oci/README.md). AI coding agents (OpenCode,
+Claude Code, …) can drive the whole flow themselves via the bundled
+`deploy-to-oci` skill in `.opencode/skills/`.
+
+**Manual alternative.** In the Oracle Cloud console:
 
 1. **Compute → Instances → Create instance.**
 2. Image: **Ubuntu 24.04** (or 22.04).
@@ -459,4 +475,7 @@ The code is split into:
 - `blink_forwarder/forwarder.py` — the run loop.
 - `scripts/blink_login.py` — interactive one-time login.
 - `scripts/local_test.sh` — credential-free local smoke test.
-- `scripts/install.sh` — Oracle/Ubuntu installer.
+- `scripts/oci_provision.sh` — one-command OCI Always Free provisioning + bootstrap.
+- `scripts/restore_from_oci.sh` — VM-side state restore from Object Storage.
+- `deploy/oci/README.md` — full OCI deployment, IAM, and disaster-recovery guide.
+- `.opencode/skills/deploy-to-oci/` — agent skill that automates the whole OCI setup.
